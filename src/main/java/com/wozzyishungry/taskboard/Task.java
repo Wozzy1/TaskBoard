@@ -18,6 +18,13 @@ public class Task {
         this.col = col;
     }
 
+    public Task(String description, boolean isComplete) {
+        this.description = description;
+        this.isComplete = isComplete;
+        this.row = -1;
+        this.col = -1;
+    }
+
     // Getters and Setters
     public String getDescription() {
         return description;
