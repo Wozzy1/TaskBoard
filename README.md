@@ -21,5 +21,8 @@ UI component -> could use:
 * python tkinter
 
 notes:
-dont forget about the center square 
+dont forget about the center square <br>
 even N x N boards wont have a center space
+
+Need to work on bingo finding algorithm
+Wanna create the dynamic list view to see all the tasks at once before creating the board, also display # of tasks

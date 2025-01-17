@@ -11,13 +11,25 @@ import java.util.Stack;
 // import javax.swing.SwingConstants;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 import java.awt.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class TaskBoard {
 
     private ArrayList<Task> tasks;
     private Task[][] board;
     private int boardLength;
+    private File workingFile;
+
+    private CardLayout layout;
+    private JPanel cardPanel;
+    private JFrame frame;
 
     /** 
      * ArrayList based "stack" for storing the history
@@ -67,22 +79,24 @@ public class TaskBoard {
     private static final Dimension SMALL_DIMENSION = new Dimension(400, 300);
     private static final Dimension MEDIUM_DIMENSION = new Dimension(800, 600);
     private static final Dimension LARGE_DIMENSION = new Dimension(1000, 800);
+    private static final String DELIMITER = " * ";
 
     public TaskBoard() {
         tasks = new ArrayList<>();
         stack = new ArrayList<>();
+        workingFile = null;
         sp = -1;
     }
 
     public void run() {
 
-        JFrame frame = new JFrame("Enter Items Frame");
+        frame = new JFrame("Enter Items Frame");
         frame.setSize(SMALL_DIMENSION);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // highest level of layout that gets added to frame and displayed
-        CardLayout layout = new CardLayout();
-        JPanel cardPanel = new JPanel(layout);
+        layout = new CardLayout();
+        cardPanel = new JPanel(layout);
 
         JPanel inputPanel = new JPanel(new FlowLayout());
         JLabel label = new JLabel("Enter new task:");
@@ -90,27 +104,25 @@ public class TaskBoard {
         JButton button = new JButton("Add");
         button.addActionListener(event -> {
             String input = textField.getText();
-            System.out.println(input);
 
+            if (input.length() == 0) {
+                JOptionPane.showMessageDialog(frame, "Your task description can't be empty, sorry!");
+                return;
+            }
+            if (input.contains("*")) {
+                JOptionPane.showMessageDialog(frame, "Your task description can't contain an asterisk, sorry!");
+                return;
+            }
+            
             tasks.add(new Task(input, false));
             textField.setText(""); 
         });
         JButton nextButton = new JButton("Next");
         nextButton.addActionListener(event -> {
             arrayToBoard();
-            printTasks();
-            printBoard();
-            cardPanel.add(createTaskBoardPanel(frame), "TaskBoardPanel");
-            frame.setTitle("View Board");
-
-            if (tasks.size() + 1 <= 9) {
-                frame.setSize(SMALL_DIMENSION);
-            } else if (tasks.size() + 1 <= 25) {
-                frame.setSize(MEDIUM_DIMENSION);
-            } else {
-                frame.setSize(LARGE_DIMENSION);
-            }
-            layout.show(cardPanel, "TaskBoardPanel");
+            // printTasks();
+            // printBoard();
+            createAndDisplayBoardPanel(frame, layout, cardPanel);
         });
 
         // Add to frame
@@ -126,24 +138,38 @@ public class TaskBoard {
         // Display the frame
         frame.setVisible(true);
 
-        Task t = new Task("Wash the dishes", false);
-        tasks.add(t);
-        t = new Task("Eat three meals a day", true);
-        tasks.add(t);
-        t = new Task("Sleep a full eight hours", true);
-        tasks.add(t);
-        t = new Task("Run a marathon", true);
-        tasks.add(t);
-        t = new Task("Cook pasta with ground beef", true);
-        tasks.add(t);
-        t = new Task("Swim four laps in the pool", true);
-        tasks.add(t);
-        t = new Task("Read webtoons before bed", true);
-        tasks.add(t);
+        // Task t = new Task("Wash the dishes", false);
+        // tasks.add(t);
+        // t = new Task("Eat three meals a day", true);
+        // tasks.add(t);
+        // t = new Task("Sleep a full eight hours", true);
+        // tasks.add(t);
+        // t = new Task("Run a marathon", true);
+        // tasks.add(t);
+        // t = new Task("Cook pasta with ground beef", true);
+        // tasks.add(t);
+        // t = new Task("Swim four laps in the pool", true);
+        // tasks.add(t);
+        // t = new Task("Read webtoons before bed", true);
+        // tasks.add(t);
         // arrayToBoard();
 
         // board[1][1] = new Task("free", true, 1, 1);
         // printBoard();
+    }
+
+    private void createAndDisplayBoardPanel(JFrame frame, CardLayout layout, JPanel cardPanel) {
+        cardPanel.add(createTaskBoardPanel(frame), "TaskBoardPanel");
+        frame.setTitle("View Board");
+
+        if (tasks.size() <= 9) {
+            frame.setSize(SMALL_DIMENSION);
+        } else if (tasks.size() <= 25) {
+            frame.setSize(MEDIUM_DIMENSION);
+        } else {
+            frame.setSize(LARGE_DIMENSION);
+        }
+        layout.show(cardPanel, "TaskBoardPanel");
     }
 
     private void printTasks() {
@@ -152,6 +178,9 @@ public class TaskBoard {
         }
     }
 
+    /**
+     * Takes the private list tasks and updates the private Task[][] board with the shuffled list
+     */
     private void arrayToBoard() {
         // finds the next perfect square greater than tasks.size() + 1 
         // +1 to account for free middle space
@@ -208,7 +237,7 @@ public class TaskBoard {
         // Main Panel with BorderLayout
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10)); // Spacing between components
 
-        // Center: 3x3 Board
+        // Center: NxN board
         JPanel boardPanel = new JPanel(new GridLayout(boardLength, boardLength, 5, 5)); // Spacing between cells
         System.out.println("BoardLength: " + boardLength);
         for (int i = 0; i < boardLength; i++) {
@@ -244,7 +273,7 @@ public class TaskBoard {
                         }
                         sp++;
                         stack.add(action);
-                        System.out.println("Added: " + action.getTask().getRow() + ", " + action.getTask().getCol() + " " + action.getStoredState());
+                        // System.out.println("Added: " + action.getTask().getRow() + ", " + action.getTask().getCol() + " " + action.getStoredState());
 
                     });
                     cell.setToolTipText("<html>" + currTask.getDescription() + "<br>" + (currTask.isComplete() ? "\u2713 completed" : "\u2716 not completed") + "<html>");
@@ -263,15 +292,57 @@ public class TaskBoard {
         // Right: Buttons Panel
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-        rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Padding
+        rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        String[] buttonLabels = {"Save Board", "Open Board", "New Board", "Randomize board"};
-        for (String label : buttonLabels) {
-            JButton button = new JButton(label);
-            button.setAlignmentX(Component.CENTER_ALIGNMENT); // Center-align the buttons
-            rightPanel.add(button);
-            rightPanel.add(Box.createVerticalStrut(10)); // Add space between buttons
-        }
+        // Save Board Button
+        JButton saveButton = new JButton("Save Board");
+        saveButton.addActionListener(click -> {
+            saveBoardToFile();
+        });
+        saveButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        rightPanel.add(saveButton);
+        rightPanel.add(Box.createVerticalStrut(10));
+
+        // Open Board Button
+        JButton openButton = new JButton("Open Board");
+        openButton.addActionListener(click -> {
+            JFileChooser fileChooser = new JFileChooser(new File("."));
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.setFileFilter(new FileNameExtensionFilter("TaskBoard Text Files", "txt"));
+            int result = fileChooser.showOpenDialog(null);
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+                // Get the selected file
+                File selectedFile = fileChooser.getSelectedFile();
+    
+                // Do something with the file
+                System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+                ArrayList<Task> newTasks = parseFile(selectedFile.getAbsolutePath());
+
+                this.tasks = newTasks;
+                printTasks();
+                updateBoardFromList(tasks);
+                createAndDisplayBoardPanel(frame, layout, cardPanel);
+                System.out.println(tasks.size() + ", " + boardLength);
+                printBoard();
+            }
+        });
+        openButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        rightPanel.add(openButton);
+        rightPanel.add(Box.createVerticalStrut(10));
+
+        // New Board Button
+        JButton newButton = new JButton("New Board");
+        newButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        rightPanel.add(newButton);
+        rightPanel.add(Box.createVerticalStrut(10));
+
+        // Randomize Board Button
+        JButton randomizeButton = new JButton("Randomize board");
+        randomizeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        rightPanel.add(randomizeButton);
+        rightPanel.add(Box.createVerticalStrut(10));
+
 
         // Bottom: Undo and Redo Buttons
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
@@ -323,5 +394,113 @@ public class TaskBoard {
         mainPanel.add(bottomPanel, BorderLayout.SOUTH); // Undo/Redo at the bottom
 
         return mainPanel;
+    }
+
+    /**
+     * Writes the current board to a file with the format: <br>
+     * description * isComplete * row * col
+     * @return
+     */
+    private boolean saveBoardToFile() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < boardLength; i++) {
+            for (int j = 0; j < boardLength; j++) {
+                Task t = board[i][j];
+                if (t != null) {
+                    sb.append(
+                        t.getDescription())
+                        .append(DELIMITER)
+                        .append(t.isComplete())
+                        .append(DELIMITER)
+                        .append(t.getRow())
+                        .append(DELIMITER)
+                        .append(t.getCol())
+                        .append('\n');
+                } else {
+                    sb.append(
+                        "None")
+                        .append(DELIMITER)
+                        .append(false)
+                        .append(DELIMITER)
+                        .append(-1)
+                        .append(DELIMITER)
+                        .append(-1)
+                        .append('\n');
+                }
+            }
+        }
+
+        if (workingFile == null) {
+            String newFilename = (String)JOptionPane.showInputDialog(null, "Name of file to save:");
+            if (newFilename != null && newFilename.length() > 0) {
+                try {
+                    File file = new File("./" + newFilename);
+                    FileWriter fw = new FileWriter(file);
+                    fw.write(sb.toString());
+                    fw.close();
+                    JOptionPane.showMessageDialog(null, "Succesfully saved to disk!");
+                    System.out.println("Succesfully saved to " + file.getCanonicalPath());
+                    workingFile = file;
+                    return true;
+                } catch (Exception e) {
+                    System.err.println(e.getMessage());
+                    return false;
+                }
+            }
+        } else {
+            // if there is a working file already do something different
+            // maybe create different buttons like save vs save as 
+        }
+        
+        return false;
+    }
+
+    // private Task[][] parseFile(String filepath) {
+    //     try (BufferedReader br = new BufferedReader(new FileReader(filepath))) {
+    //         String line;
+    //         int count = 0;
+    //         while ((line = br.readLine()) != null) {
+
+    //         }
+    //     } catch (IOException e) {
+    //         System.err.println(e.getMessage());
+    //         e.printStackTrace();
+    //     }
+
+    //     return null;
+    // }
+
+    private ArrayList<Task> parseFile(String filepath) {
+        ArrayList<Task> newTasks = new ArrayList<>();
+    
+        try (BufferedReader br = new BufferedReader(new FileReader(filepath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(" \\* ");
+                if (parts[0].equalsIgnoreCase("None") || parts[0].equalsIgnoreCase("NULL")) {
+                    newTasks.add(null);
+                    continue;
+                }
+                Task t = new Task(parts[0].strip(), Boolean.valueOf(parts[1].strip()), Integer.valueOf(parts[2].strip()), Integer.valueOf(parts[3].strip()));
+                newTasks.add(t);
+            }
+            // System.out.println(newTasks);
+        } catch (IOException e) {
+            System.err.println("Error reading the file: " + e.getMessage());
+            e.printStackTrace();
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid number format in the file: " + e.getMessage());
+        }
+    
+        return newTasks;
+    }
+
+    private void updateBoardFromList(ArrayList<Task> taskList) {
+        int tempLength = (int)Math.sqrt(taskList.size());
+        Task[][] newBoard = new Task[tempLength][tempLength];
+        for (int i = 0; i < taskList.size(); i++) {
+            newBoard[i / tempLength][i % tempLength] = taskList.get(i);
+        }
+        board = newBoard;
     }
 }
