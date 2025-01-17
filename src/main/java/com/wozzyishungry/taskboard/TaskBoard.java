@@ -19,7 +19,13 @@ public class TaskBoard {
     private Task[][] board;
     private int boardLength;
 
+    /** 
+     * ArrayList based "stack" for storing the history
+     */
     private ArrayList<TaskBoardAction> stack;
+    /**
+     * Stack pointer variable for keeping track of where the user is in the history stack
+     */
     private int sp;
 
     private class TaskBoardAction {
@@ -49,11 +55,11 @@ public class TaskBoard {
             this.cell = cell;
         }
 
-        public boolean getPrevState() {
+        public boolean getStoredState() {
             return prevState;
         }
 
-        public void setPrevState(boolean prevState) {
+        public void setStoredState(boolean prevState) {
             this.prevState = prevState;
         }
     }
@@ -238,7 +244,7 @@ public class TaskBoard {
                         }
                         sp++;
                         stack.add(action);
-                        System.out.println("Added: " + action.getTask().getRow() + ", " + action.getTask().getCol() + " " + action.getPrevState());
+                        System.out.println("Added: " + action.getTask().getRow() + ", " + action.getTask().getCol() + " " + action.getStoredState());
 
                     });
                     cell.setToolTipText("<html>" + currTask.getDescription() + "<br>" + (currTask.isComplete() ? "\u2713 completed" : "\u2716 not completed") + "<html>");
@@ -274,10 +280,10 @@ public class TaskBoard {
             if (sp == -1) {
                 return;
             }
-            
+
             TaskBoardAction a = stack.get(sp);
-            System.out.println("Undid: " + a.getTask().getRow() + ", " + a.getTask().getCol() + " " + a.getPrevState());
-            boolean prev = a.getPrevState();
+            // System.out.println("Undid: " + a.getTask().getRow() + ", " + a.getTask().getCol() + " " + a.getStoredState());
+            boolean prev = a.getStoredState();
             a.getTask().setComplete(prev);
             if (a.getTask().isComplete()) {
                 a.getCell().setBackground(new Color(152, 251,152));
@@ -286,16 +292,27 @@ public class TaskBoard {
             }
             sp--;
             
-            for (TaskBoardAction ac : stack) {
-                System.out.println(ac.getTask().getRow() + ", " + ac.getTask().getCol() + " " + ac.getPrevState());
-            }
+            // for (TaskBoardAction ac : stack) {
+            //     System.out.println(ac.getTask().getRow() + ", " + ac.getTask().getCol() + " " + ac.getStoredState());
+            // }
         });
+
         JButton redoButton = new JButton("Redo");
         redoButton.addActionListener(click -> {
-            for (TaskBoardAction ac : stack) {
-                System.out.println(ac.getTask().getRow() + ", " + ac.getTask().getCol() + " " + ac.getPrevState());
+            if (sp + 1 >= stack.size()) {
+                return;
             }
+            sp++;
             System.out.println("--> " + sp);
+            TaskBoardAction a = stack.get(sp);
+            boolean next = a.getStoredState();
+            // System.out.println("Redid: " + a.getTask().getRow() + ", " + a.getTask().getCol() + " " + !a.getStoredState());
+            a.getTask().setComplete(!next);
+            if (a.getTask().isComplete()) {
+                a.getCell().setBackground(new Color(152, 251,152));
+            } else {
+                a.getCell().setBackground(new Color(240,128,128));
+            }
         });
         bottomPanel.add(undoButton);
         bottomPanel.add(redoButton);
