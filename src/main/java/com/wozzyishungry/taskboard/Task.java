@@ -60,6 +60,7 @@ public class Task {
 
     @Override
     public String toString() {
-        return "Task \'" + description + "\' located at row " + row + ", col " + col + (isComplete ? " is complete" : " is not complete");
+        return description;
+        // return "Task \'" + description + "\' located at row " + row + ", col " + col + (isComplete ? " is complete" : " is not complete");
     }
 }

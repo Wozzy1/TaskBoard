@@ -14,6 +14,7 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -98,38 +99,7 @@ public class TaskBoard {
         layout = new CardLayout();
         cardPanel = new JPanel(layout);
 
-        JPanel inputPanel = new JPanel(new FlowLayout());
-        JLabel label = new JLabel("Enter new task:");
-        JTextField textField = new JTextField(15);
-        JButton button = new JButton("Add");
-        button.addActionListener(event -> {
-            String input = textField.getText();
-
-            if (input.length() == 0) {
-                JOptionPane.showMessageDialog(frame, "Your task description can't be empty, sorry!");
-                return;
-            }
-            if (input.contains("*")) {
-                JOptionPane.showMessageDialog(frame, "Your task description can't contain an asterisk, sorry!");
-                return;
-            }
-            
-            tasks.add(new Task(input, false));
-            textField.setText(""); 
-        });
-        JButton nextButton = new JButton("Next");
-        nextButton.addActionListener(event -> {
-            arrayToBoard();
-            // printTasks();
-            // printBoard();
-            createAndDisplayBoardPanel(frame, layout, cardPanel);
-        });
-
-        // Add to frame
-        inputPanel.add(label);
-        inputPanel.add(textField);
-        inputPanel.add(button);
-        inputPanel.add(nextButton);
+        JPanel inputPanel = createInputComponents();
 
         cardPanel.add(inputPanel, "InputPanel");
         
@@ -158,13 +128,95 @@ public class TaskBoard {
         // printBoard();
     }
 
+    private JPanel createInputComponents() {
+        JPanel inputPanel = new JPanel(new FlowLayout());
+        JLabel label = new JLabel("Enter new task:");
+
+        TaskListModel listModel = new TaskListModel(tasks);
+        JList<Task> jList = new JList<>(listModel);
+        JScrollPane scrollPane = new JScrollPane(jList);
+        scrollPane.setSize(new Dimension(150, 200));
+        jList.setCellRenderer(new ListCellRenderer<Task>() {
+            @Override
+            public Component getListCellRendererComponent(JList<? extends Task> list, Task task, int index, boolean isSelected, boolean cellHasFocus) {
+                JPanel panel = new JPanel(new BorderLayout(5, 5));
+                panel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+                
+                // label for task description
+                JLabel label = new JLabel("\u2022 " +task.getDescription());
+                panel.add(label, BorderLayout.CENTER);
+        
+                // highlight the panel if selected
+                if (isSelected) {
+                    panel.setBackground(list.getSelectionBackground());
+                    label.setForeground(list.getSelectionForeground());
+                } else {
+                    panel.setBackground(list.getBackground());
+                    label.setForeground(list.getForeground());
+                }
+        
+                return panel;
+            }
+        });
+        JTextField textField = new JTextField(15);
+        JButton button = new JButton("Add");
+        ActionListener actionListener = event -> {
+            String input = textField.getText();
+
+            if (input.length() == 0) {
+                JOptionPane.showMessageDialog(frame, "Your task description can't be empty, sorry!");
+                return;
+            }
+            if (input.contains("*")) {
+                JOptionPane.showMessageDialog(frame, "Your task description can't contain an asterisk, sorry!");
+                return;
+            }
+            
+            tasks.add(new Task(input, false));
+            listModel.taskAdded(tasks.size() - 1);
+            textField.setText("");
+            textField.requestFocus(); 
+        };
+        button.addActionListener(actionListener);
+        textField.addActionListener(actionListener);
+
+        JButton removeButton = new JButton("Remove Selected");
+        removeButton.addActionListener(click -> {
+            int selectedIndex = jList.getSelectedIndex();
+            
+            // ensures an item is selected
+            if (selectedIndex != -1) { 
+                tasks.remove(selectedIndex);
+                listModel.taskRemoved(selectedIndex);
+            } else {
+                JOptionPane.showMessageDialog(frame, "No task selected to remove!");
+            }
+        });
+        JButton nextButton = new JButton("Next");
+        nextButton.addActionListener(event -> {
+            arrayToBoard(); // for logging
+
+            // handles logic of shuffling board and displays it
+            createAndDisplayBoardPanel(frame, layout, cardPanel);
+        });
+
+        // Add to frame
+        inputPanel.add(label);
+        inputPanel.add(textField);
+        inputPanel.add(button);
+        inputPanel.add(nextButton);
+        inputPanel.add(scrollPane);
+        inputPanel.add(removeButton);
+        return inputPanel;
+    }
+
     private void createAndDisplayBoardPanel(JFrame frame, CardLayout layout, JPanel cardPanel) {
         cardPanel.add(createTaskBoardPanel(frame), "TaskBoardPanel");
         frame.setTitle("View Board");
 
-        if (tasks.size() <= 9) {
+        if (boardLength <= 3) {
             frame.setSize(SMALL_DIMENSION);
-        } else if (tasks.size() <= 25) {
+        } else if (boardLength <= 5) {
             frame.setSize(MEDIUM_DIMENSION);
         } else {
             frame.setSize(LARGE_DIMENSION);
