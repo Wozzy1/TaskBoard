@@ -4,16 +4,29 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Stack;
 
-// import javax.swing.JButton;
-// import javax.swing.JFrame;
-// import javax.swing.JLabel;
-// import javax.swing.JTextField;
-// import javax.swing.SwingConstants;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
 
-import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,42 +54,6 @@ public class TaskBoard {
      */
     private int sp;
 
-    private class TaskBoardAction {
-        private Task task;
-        private JButton cell;
-        private boolean prevState;
-
-        public TaskBoardAction(Task task,JButton cell, boolean prevState) {
-            this.task = task;
-            this.cell = cell;
-            this.prevState = prevState;
-        }
-
-        public Task getTask() {
-            return task;
-        }
-        
-        public void setTask(Task t) {
-            this.task = t;
-        }
-
-        public JButton getCell() {
-            return cell;
-        }
-
-        public void setCell(JButton cell) {
-            this.cell = cell;
-        }
-
-        public boolean getStoredState() {
-            return prevState;
-        }
-
-        public void setStoredState(boolean prevState) {
-            this.prevState = prevState;
-        }
-    }
-
     private static final Dimension SMALL_DIMENSION = new Dimension(400, 300);
     private static final Dimension MEDIUM_DIMENSION = new Dimension(800, 600);
     private static final Dimension LARGE_DIMENSION = new Dimension(1000, 800);
@@ -90,7 +67,6 @@ public class TaskBoard {
     }
 
     public void run() {
-
         frame = new JFrame("Enter Items Frame");
         frame.setSize(SMALL_DIMENSION);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -107,25 +83,6 @@ public class TaskBoard {
         
         // Display the frame
         frame.setVisible(true);
-
-        // Task t = new Task("Wash the dishes", false);
-        // tasks.add(t);
-        // t = new Task("Eat three meals a day", true);
-        // tasks.add(t);
-        // t = new Task("Sleep a full eight hours", true);
-        // tasks.add(t);
-        // t = new Task("Run a marathon", true);
-        // tasks.add(t);
-        // t = new Task("Cook pasta with ground beef", true);
-        // tasks.add(t);
-        // t = new Task("Swim four laps in the pool", true);
-        // tasks.add(t);
-        // t = new Task("Read webtoons before bed", true);
-        // tasks.add(t);
-        // arrayToBoard();
-
-        // board[1][1] = new Task("free", true, 1, 1);
-        // printBoard();
     }
 
     private JPanel createInputComponents() {
@@ -224,14 +181,21 @@ public class TaskBoard {
         layout.show(cardPanel, "TaskBoardPanel");
     }
 
+    /**
+     * Print all tasks in backing list for debugging.
+     */
     private void printTasks() {
         for (Task task : tasks) {
+            // System.out.println("Task \'" + task.getDescription() + 
+            // "\' located at row " + task.getRow() + 
+            // ", col " + task.getCol() + 
+            // (task.isComplete() ? " is complete" : " is not complete"));
             System.out.println(task);
         }
     }
 
     /**
-     * Takes the private list tasks and updates the private Task[][] board with the shuffled list
+     * Takes {@link #tasks} and updates the {@link #board} with the shuffled list
      */
     private void arrayToBoard() {
         // finds the next perfect square greater than tasks.size() + 1 
@@ -270,13 +234,16 @@ public class TaskBoard {
         }
     }
 
+    /**
+     * Prints the {@link #board} using the task's description (for the time being) for use debugging.
+     */
     private void printBoard() {
         for (int i = 0; i < boardLength; i++) {
             for (int j = 0; j < boardLength; j++) {
                 if (board[i][j] == null) {
                     System.out.print("null ");
                 } else {
-                    // TODO update this to print something related to the task
+                    // TODO update this to print something shorted and related to the task
                     // System.out.print("Test ");
                     System.out.print(board[i][j].getDescription() + " ");
                 }
@@ -285,6 +252,14 @@ public class TaskBoard {
         }
     }
 
+    /**
+     * Creates the "View Board" Card that holds the NxN task board,
+     * buttons to save or randomize the board, 
+     * and buttons to create or open a different board.
+     * @param frame
+     *          the main frame
+     * @return the JPanel with all the components attached to it
+     */
     private JPanel createTaskBoardPanel(JFrame frame) {
         // Main Panel with BorderLayout
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10)); // Spacing between components
@@ -336,10 +311,6 @@ public class TaskBoard {
                 }
             }
         }
-        // for (int i = 0; i < boardLength * boardLength; i++) {
-        //     JButton cell = new JButton("temp"); // Example text
-        //     boardPanel.add(cell);
-        // }
 
         // Right: Buttons Panel
         JPanel rightPanel = new JPanel();
@@ -373,7 +344,7 @@ public class TaskBoard {
 
                 this.tasks = newTasks;
                 printTasks();
-                updateBoardFromList(tasks);
+                updateBoardFromList();
                 createAndDisplayBoardPanel(frame, layout, cardPanel);
                 System.out.println(tasks.size() + ", " + boardLength);
                 printBoard();
@@ -415,9 +386,6 @@ public class TaskBoard {
             }
             sp--;
             
-            // for (TaskBoardAction ac : stack) {
-            //     System.out.println(ac.getTask().getRow() + ", " + ac.getTask().getCol() + " " + ac.getStoredState());
-            // }
         });
 
         JButton redoButton = new JButton("Redo");
@@ -451,7 +419,7 @@ public class TaskBoard {
     /**
      * Writes the current board to a file with the format: <br>
      * description * isComplete * row * col
-     * @return
+     * @return boolean of succesful save or not
      */
     private boolean saveBoardToFile() {
         StringBuilder sb = new StringBuilder();
@@ -507,21 +475,13 @@ public class TaskBoard {
         return false;
     }
 
-    // private Task[][] parseFile(String filepath) {
-    //     try (BufferedReader br = new BufferedReader(new FileReader(filepath))) {
-    //         String line;
-    //         int count = 0;
-    //         while ((line = br.readLine()) != null) {
-
-    //         }
-    //     } catch (IOException e) {
-    //         System.err.println(e.getMessage());
-    //         e.printStackTrace();
-    //     }
-
-    //     return null;
-    // }
-
+    /**
+     * Reads the file and recreates the task board from what was previously saved.
+     * @param filepath
+     *          absolute file path to the saved task board
+     * @return
+     *          the tasks to overwite {@link #tasks} and populate the task board
+     */
     private ArrayList<Task> parseFile(String filepath) {
         ArrayList<Task> newTasks = new ArrayList<>();
     
@@ -547,11 +507,14 @@ public class TaskBoard {
         return newTasks;
     }
 
-    private void updateBoardFromList(ArrayList<Task> taskList) {
-        int tempLength = (int)Math.sqrt(taskList.size());
-        Task[][] newBoard = new Task[tempLength][tempLength];
-        for (int i = 0; i < taskList.size(); i++) {
-            newBoard[i / tempLength][i % tempLength] = taskList.get(i);
+    /**
+     * Updates {@link #board} and {@link #boardLength} with new tasks returned from {@link #parseFile(String)}
+     */
+    private void updateBoardFromList() {
+        boardLength = (int)Math.sqrt(tasks.size());
+        Task[][] newBoard = new Task[boardLength][boardLength];
+        for (int i = 0; i < tasks.size(); i++) {
+            newBoard[i / boardLength][i % boardLength] = tasks.get(i);
         }
         board = newBoard;
     }
