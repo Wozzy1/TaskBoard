@@ -394,7 +394,7 @@ public class TaskBoard {
                 return;
             }
             sp++;
-            System.out.println("--> " + sp);
+            // System.out.println("--> " + sp);
             TaskBoardAction a = stack.get(sp);
             boolean next = a.getStoredState();
             // System.out.println("Redid: " + a.getTask().getRow() + ", " + a.getTask().getCol() + " " + !a.getStoredState());
