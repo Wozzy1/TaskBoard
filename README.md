@@ -20,5 +20,13 @@ notes:
 dont forget about the center square <br>
 even N x N boards wont have a center space
 
-Need to work on bingo finding algorithm
-Wanna create the dynamic list view to see all the tasks at once before creating the board, also display # of tasks
+## Things to implement:
+* Need to work on bingo finding algorithm
+* Wanna create the dynamic list view to see all the tasks at once before creating the board, also display # of tasks
+* Back button from board to creating board. Should save the current list items so you can modify the list before saving it as final.
+* New Board Button. Takes you back to the creating board view. 
+* Randomize Board -> Shuffle board button.
+* A mechanism to check if you have saved or not before leaving the page.
+* Make the naming process more UX friendly by having board name on the UI instead of in File System. Take the user inputted board name and populate the FS popup with it (if possible).
+* Have a live count showing how many items are in the list when creating the list.
+* Allow modification to a list from a saved board. Ex: open this week's list; should be able to modify list items and save again.
